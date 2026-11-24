@@ -381,9 +381,12 @@ async function act(fn, after = 400){
 /* Decide the device inside the click itself, so the app launch or player window is not blocked. */
 let appFailed = false;
 function launchApp(p){
-  const a = document.createElement('a');
-  a.href = p && p.uri && p.uri.startsWith('spotify:') ? p.uri : 'spotify:';
-  document.body.appendChild(a); a.click(); a.remove();
+  let url = 'https://open.spotify.com/';
+  const m = p && p.uri && p.uri.match(/^spotify:(playlist|album|track):(\w+)$/);
+  if (m) url += m[1] + '/' + m[2];
+  else if (p && p.kind === 'liked') url += 'collection/tracks';
+  const w = window.open(url, 'spr_web');
+  if (!w) { const e = new Error('blocked'); e.friendly = 'Chrome blocked Spotify from opening. Allow pop-ups for notion.com, then try again.'; throw e; }
 }
 async function waitForApp(){
   for (let n = 0; n < 20; n++) {
@@ -391,7 +394,7 @@ async function waitForApp(){
     try { const d = await api('/me/player/devices'); const f = ((d && d.devices) || []).find(x => x.name !== PLAYER_NAME && !x.is_restricted); if (f) return f.id; } catch(e) {}
   }
   appFailed = true;
-  const e = new Error('noapp'); e.friendly = 'The Spotify app did not open. Click again to play in the built-in player instead.'; throw e;
+  const e = new Error('noapp'); e.friendly = 'Spotify did not start in time. Click again to play in the built-in player instead.'; throw e;
 }
 function pickDevice(p){
   if (state && state.device) return { id: null };
