@@ -18,7 +18,7 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 Inter,system-ui,sans-serif;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
-.card{height:100%;display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:14px;
+.card{position:relative;height:100%;display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:14px;
   background:linear-gradient(160deg,rgba(var(--tint),.55),var(--card) 70%);transition:background .8s}
 .now{display:flex;gap:14px;align-items:center}
 .art{width:clamp(84px,24vw,128px);aspect-ratio:1;border-radius:8px;object-fit:cover;background:#2a2a2a;flex:none;box-shadow:0 8px 24px rgba(0,0,0,.45)}
@@ -39,7 +39,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .chip{flex:none;display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:8px;background:rgba(255,255,255,.06);max-width:190px;min-height:40px}
 .chip:hover{background:rgba(255,255,255,.12)}
 .chip.on{background:rgba(30,215,96,.18);color:var(--acc)}
-.chip img{width:32px;height:32px;border-radius:5px;object-fit:cover;flex:none;background:#333}
+.chip img,.chip .liked{width:32px;height:32px;border-radius:5px;object-fit:cover;flex:none;background:#333}
+.liked,.tr .liked{display:grid;place-items:center;background:linear-gradient(135deg,#4a1fd6,#8fd3c9)!important;color:#fff;font-size:15px}
 .chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
 .foot{display:flex;align-items:center;gap:10px;margin-top:auto;font:12px 'IBM Plex Mono',monospace;color:var(--mute)}
 .dev{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
@@ -47,10 +48,25 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .dev svg{width:14px;height:14px;fill:currentColor;flex:none}
 .vol{flex:1;display:flex;align-items:center;gap:6px;justify-content:flex-end}
 input[type=range]{width:min(120px,100%);accent-color:var(--acc)}
-.menu{position:absolute;left:14px;bottom:44px;background:#2a2a2a;border:1px solid var(--line);border-radius:10px;padding:6px;min-width:220px;box-shadow:0 12px 30px rgba(0,0,0,.5);z-index:5}
+.menu{position:absolute;left:14px;bottom:44px;background:#2a2a2a;border:1px solid var(--line);border-radius:10px;padding:6px;min-width:220px;box-shadow:0 12px 30px rgba(0,0,0,.5);z-index:6}
 .menu button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:6px}
 .menu button:hover{background:#363636}.menu .on{color:var(--acc)}
-.msg{font-size:12px;color:#f0b35a;min-height:0}
+.msg{font-size:12px;color:#f0b35a}
+.list{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:#1e1e1e}
+.lh{display:flex;align-items:center;gap:8px}
+.lh h2{flex:1;margin:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbtn{background:var(--acc);color:#0b0b0b;font-weight:700;border-radius:999px;padding:6px 14px;min-height:34px;white-space:nowrap}
+.sbtn{border:1px solid var(--line);border-radius:999px;padding:6px 12px;min-height:34px;white-space:nowrap;color:var(--mute)}
+.sbtn:hover{color:var(--ink)}
+.tracks{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#444 transparent}
+.tr{display:grid;grid-template-columns:26px 34px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;padding:5px 6px;border-radius:6px}
+.tr:hover{background:rgba(255,255,255,.07)}
+.tr img{width:34px;height:34px;border-radius:4px;object-fit:cover;background:#333}
+.tr .n,.tr .d{font:12px 'IBM Plex Mono',monospace;color:var(--mute);text-align:right}
+.tr .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr .a{display:block;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr.on .t,.tr.on .n{color:var(--acc)}
+.note{color:var(--mute);font-size:13px;padding:8px 6px}
 .gate{height:100%;display:grid;place-items:center;text-align:center;padding:16px}
 .gate h1{font-size:18px;margin:0 0 6px}.gate p{color:var(--mute);margin:0 0 14px;font-size:13px}
 .btn{background:var(--acc);color:#0b0b0b;font-weight:700;padding:10px 20px;border-radius:999px;min-height:44px}
@@ -78,40 +94,65 @@ textarea{width:100%;height:70px;background:#2a2a2a;color:var(--ink);border:1px s
         <button class="k" id="prev" aria-label="Previous"><svg viewBox="0 0 16 16"><path d="M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.75a.7.7 0 0 1 1.05.6v12.6a.7.7 0 0 1-1.05.6L4 9.15v5.15a.7.7 0 0 1-1.4 0V1.7a.7.7 0 0 1 .7-.7"/></svg></button>
         <button class="k big" id="play" aria-label="Play"><svg viewBox="0 0 16 16" id="pico"><path d="M3 1.7v12.6a.7.7 0 0 0 1.05.6l10.9-6.3a.7.7 0 0 0 0-1.2L4.05 1.1A.7.7 0 0 0 3 1.7"/></svg></button>
         <button class="k" id="next" aria-label="Next"><svg viewBox="0 0 16 16"><path d="M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.1A.7.7 0 0 0 1 1.7v12.6a.7.7 0 0 0 1.05.6L12 9.15v5.15a.7.7 0 0 0 1.4 0V1.7a.7.7 0 0 0-.7-.7"/></svg></button>
-        <button class="k" id="open" aria-label="Open in Spotify" title="Open in Spotify"><svg viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0m3.67 11.54a.5.5 0 0 1-.69.17c-1.88-1.15-4.25-1.41-7.04-.77a.5.5 0 1 1-.22-.97c3.05-.7 5.67-.4 7.78.89a.5.5 0 0 1 .17.68m.98-2.18a.62.62 0 0 1-.86.2c-2.15-1.32-5.43-1.7-7.97-.93a.62.62 0 1 1-.36-1.2c2.9-.88 6.52-.45 8.99 1.07a.62.62 0 0 1 .2.86m.08-2.27C10.15 5.56 5.9 5.42 3.44 6.17a.75.75 0 1 1-.43-1.43c2.82-.86 7.52-.69 10.49 1.07a.75.75 0 0 1-.77 1.28"/></svg></button>
       </div>
     </div>
   </div>
-  <div id="msg" class="msg"></div>
+  <div id="msg" class="msg" hidden></div>
   <div id="pl" class="pl" aria-label="Your playlists"></div>
   <div class="foot">
     <button class="dev" id="dev"><svg viewBox="0 0 16 16"><path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v7a1.5 1.5 0 0 1-1.5 1.5H9v1h2.5a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1H7v-1H2.5A1.5 1.5 0 0 1 1 10.5z"/></svg><span id="devn">No device</span></button>
     <div class="vol"><span>vol</span><input id="vol" type="range" min="0" max="100" value="50" aria-label="Volume"></div>
   </div>
+  <div id="list" class="list" hidden>
+    <div class="lh">
+      <button class="k" id="back" aria-label="Back"><svg viewBox="0 0 16 16"><path d="M10.6 1.6a.7.7 0 0 1 0 1L5.2 8l5.4 5.4a.7.7 0 1 1-1 1L3.7 8.5a.7.7 0 0 1 0-1l5.9-5.9a.7.7 0 0 1 1 0"/></svg></button>
+      <h2 id="lname"></h2>
+      <button class="sbtn" id="lshuf">Shuffle</button>
+      <button class="pbtn" id="lplay">Play</button>
+    </div>
+    <div id="tracks" class="tracks"></div>
+  </div>
   <div id="menu" class="menu" hidden></div>
+</div>
+<div id="player" class="gate" hidden>
+  <div>
+    <h1>Notion Remote player</h1>
+    <p id="pstat">Starting...</p>
+    <p id="pnow" style="color:var(--ink)"></p>
+    <button class="btn" id="pstart" hidden>Click to turn on sound</button>
+    <p style="margin-top:14px">Keep this window open while you listen. You can minimise it.</p>
+  </div>
 </div>
 <script>
 {
 const CLIENT_ID = 'f397762f9a2a485ca321ba549ac885f7';
 const REDIRECT = location.origin + location.pathname;
-const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative';
+const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-library-read streaming user-read-email user-read-private';
+const NEED = ['streaming', 'user-library-read'];
+const PLAYER_NAME = 'Notion Remote';
+const FIXED = [
+  { kind:'liked', name:'Liked Songs', uri:'liked' },
+  { kind:'pl', name:'Chill Mix', id:'37i9dQZF1EVHGWrwldPRtj', uri:'spotify:playlist:37i9dQZF1EVHGWrwldPRtj' }
+];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = ms => { ms = Math.max(0, ms|0); const s = Math.floor(ms/1000); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); };
 const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const rand = n => b64u(crypto.getRandomValues(new Uint8Array(n)));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* storage: unpartitioned handle if the browser grants it, else plain, else memory */
 let saa = null; const mem = {};
-const store = {
-  get(k){ for (const s of [saa && saa.localStorage, safeLS()]) { try { const v = s && s.getItem(k); if (v) return v; } catch(e){} } return mem[k] || null; },
-  set(k,v){ mem[k] = v; for (const s of [saa && saa.localStorage, safeLS()]) { try { s && s.setItem(k,v); } catch(e){} } },
-  del(k){ delete mem[k]; for (const s of [saa && saa.localStorage, safeLS()]) { try { s && s.removeItem(k); } catch(e){} } }
-};
 function safeLS(){ try { return window.localStorage; } catch(e) { return null; } }
+const stores = () => [saa && saa.localStorage, safeLS()];
+const store = {
+  get(k){ for (const s of stores()) { try { const v = s && s.getItem(k); if (v) return v; } catch(e){} } return mem[k] || null; },
+  set(k,v){ mem[k] = v; for (const s of stores()) { try { s && s.setItem(k,v); } catch(e){} } },
+  del(k){ delete mem[k]; for (const s of stores()) { try { s && s.removeItem(k); } catch(e){} } }
+};
 async function grabSAA(){
   if (saa || !document.requestStorageAccess) return;
-  try { saa = await document.requestStorageAccess({ localStorage: true, BroadcastChannel: true }); } catch(e) {}
+  try { saa = await document.requestStorageAccess({ localStorage: true }); } catch(e) {}
 }
 
 async function tokenCall(params){
@@ -124,71 +165,23 @@ function saveTokens(j){
   store.set('spr_at', j.access_token);
   store.set('spr_exp', String(Date.now() + (j.expires_in - 60) * 1000));
   if (j.refresh_token) store.set('spr_rt', j.refresh_token);
+  if (j.scope) store.set('spr_scope', j.scope);
 }
-
-/* ---------- callback mode: this window is the login popup ---------- */
-const q = new URLSearchParams(location.search);
-if (q.get('code') || q.get('error')) {
-  (async () => {
-    const gate = $('gate'); gate.hidden = false;
-    if (q.get('error')) { gate.innerHTML = '<div><h1>Login cancelled</h1><p>You can close this window.</p></div>'; return; }
-    try {
-      const verifier = (q.get('state') || '').split('.')[1];
-      const j = await tokenCall({ grant_type:'authorization_code', code:q.get('code'), redirect_uri:REDIRECT, code_verifier:verifier });
-      saveTokens(j);
-      const payload = { spr: true, rt: j.refresh_token };
-      try { window.opener && window.opener.postMessage(payload, location.origin); } catch(e){}
-      try { new BroadcastChannel('spr').postMessage(payload); } catch(e){}
-      history.replaceState(null, '', REDIRECT);
-      gate.innerHTML = '<div><h1>Connected</h1><p>Your Notion widget should switch over in a second. If it does not, copy this key and paste it into the widget.</p><textarea readonly id="key"></textarea><p style="margin-top:10px"><button class="ghost" id="cp">Copy key</button></p></div>';
-      $('key').value = j.refresh_token;
-      $('cp').onclick = () => { navigator.clipboard.writeText(j.refresh_token).then(() => $('cp').textContent = 'Copied', () => $('key').select()); };
-      setTimeout(() => { try { window.close(); } catch(e){} }, 4000);
-    } catch(e) { gate.innerHTML = '<div><h1>Could not connect</h1><p>' + esc(e.message) + '</p></div>'; }
-  })();
-}
-
-/* ---------- widget mode ---------- */
-let state = null, devices = [], playlists = [], lastPoll = 0, polling = null, busy = false;
-
-function showGate(note){
-  $('app').hidden = true; const g = $('gate'); g.hidden = false;
-  g.innerHTML = '<div><h1>Spotify remote</h1><p>' + esc(note || 'Control the Spotify you already have open, with full songs on Premium.') + '</p>' +
-    '<button class="btn" id="go">Connect Spotify</button>' +
-    '<div class="paste"><input id="pk" placeholder="or paste key" aria-label="Paste key"><button class="ghost" id="pg">Use</button></div></div>';
-  $('go').onclick = login;
-  $('pg').onclick = async () => { const v = $('pk').value.trim(); if (!v) return; store.set('spr_rt', v); store.del('spr_at'); store.del('spr_exp'); start(); };
-}
-
-async function login(){
-  await grabSAA();
-  const verifier = rand(48);
-  const challenge = b64u(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  const url = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
-    response_type:'code', client_id:CLIENT_ID, scope:SCOPES, redirect_uri:REDIRECT,
-    code_challenge_method:'S256', code_challenge:challenge, state: rand(8) + '.' + verifier });
-  const w = window.open(url, 'spr_login', 'width=480,height=720');
-  if (!w) location.href = url;
-  let tries = 0;
-  const t = setInterval(() => { if (store.get('spr_rt') || ++tries > 180) { clearInterval(t); if (store.get('spr_rt')) start(); } }, 1000);
-}
-
-function listen(){
-  const onMsg = d => { if (d && d.spr && d.rt) { store.set('spr_rt', d.rt); store.del('spr_at'); start(); } };
-  window.addEventListener('message', e => { if (e.origin === location.origin) onMsg(e.data); });
-  try { new BroadcastChannel('spr').onmessage = e => onMsg(e.data); } catch(e){}
-  if (saa && saa.BroadcastChannel) { try { new saa.BroadcastChannel('spr').onmessage = e => onMsg(e.data); } catch(e){} }
-}
-
+let refreshing = null;
 async function token(){
   const at = store.get('spr_at'), exp = +store.get('spr_exp') || 0;
   if (at && Date.now() < exp) return at;
   const rt = store.get('spr_rt'); if (!rt) throw new Error('nologin');
-  try { const j = await tokenCall({ grant_type:'refresh_token', refresh_token:rt }); saveTokens(j); return j.access_token; }
-  catch(e) { store.del('spr_rt'); store.del('spr_at'); throw new Error('nologin'); }
+  if (!refreshing) refreshing = tokenCall({ grant_type:'refresh_token', refresh_token:rt })
+    .then(j => { saveTokens(j); return j.access_token; })
+    .catch(e => { store.del('spr_rt'); store.del('spr_at'); throw new Error('nologin'); })
+    .finally(() => { refreshing = null; });
+  return refreshing;
 }
+const hasScopes = () => { const s = store.get('spr_scope') || ''; return NEED.every(x => s.split(' ').includes(x)); };
 
 async function api(path, opts = {}, retry = true){
+  if (path.startsWith('https://api.spotify.com/v1')) path = path.slice(26);
   const r = await fetch('https://api.spotify.com/v1' + path, { ...opts, headers:{ Authorization:'Bearer ' + await token(), 'Content-Type':'application/json' } });
   if (r.status === 401 && retry) { store.del('spr_at'); return api(path, opts, false); }
   if (r.status === 204 || r.status === 202) return null;
@@ -197,38 +190,132 @@ async function api(path, opts = {}, retry = true){
   return j;
 }
 
-function say(t){ $('msg').textContent = t || ''; if (t) setTimeout(() => { if ($('msg').textContent === t) $('msg').textContent = ''; }, 5000); }
+const q = new URLSearchParams(location.search);
+const MODE = (q.get('code') || q.get('error')) ? 'callback' : q.get('player') ? 'player' : 'widget';
+
+/* ---------- callback mode: this window is the login popup ---------- */
+async function runCallback(){
+  const gate = $('gate'); gate.hidden = false;
+  if (q.get('error')) { gate.innerHTML = '<div><h1>Login cancelled</h1><p>You can close this window.</p></div>'; return; }
+  try {
+    const verifier = (q.get('state') || '').split('.')[1];
+    const j = await tokenCall({ grant_type:'authorization_code', code:q.get('code'), redirect_uri:REDIRECT, code_verifier:verifier });
+    saveTokens(j);
+    const payload = { spr: true, rt: j.refresh_token, scope: j.scope };
+    try { window.opener && window.opener.postMessage(payload, location.origin); } catch(e){}
+    history.replaceState(null, '', REDIRECT);
+    gate.innerHTML = '<div><h1>Connected</h1><p>Your Notion widget should switch over in a second. If it does not, copy this key and paste it into the widget.</p><textarea readonly id="key"></textarea><p style="margin-top:10px"><button class="ghost" id="cp">Copy key</button></p></div>';
+    $('key').value = j.refresh_token;
+    $('cp').onclick = () => { navigator.clipboard.writeText(j.refresh_token).then(() => $('cp').textContent = 'Copied', () => $('key').select()); };
+    setTimeout(() => { try { window.close(); } catch(e){} }, 4000);
+  } catch(e) { gate.innerHTML = '<div><h1>Could not connect</h1><p>' + esc(e.message) + '</p></div>'; }
+}
+
+/* ---------- player mode: this window is a Spotify device ---------- */
+async function runPlayer(){
+  document.title = PLAYER_NAME + ' player';
+  $('player').hidden = false;
+  const stat = t => { $('pstat').textContent = t; };
+  window.addEventListener('message', e => {
+    if (e.origin !== location.origin || !e.data || !e.data.spr_init) return;
+    if (e.data.spr_init.rt && !store.get('spr_rt')) { store.set('spr_rt', e.data.spr_init.rt); store.del('spr_at'); }
+  });
+  for (let i = 0; i < 20 && !store.get('spr_rt'); i++) {
+    try { window.opener && window.opener.postMessage({ spr_hello: 1 }, location.origin); } catch(e){}
+    await sleep(500);
+  }
+  if (!store.get('spr_rt')) { stat('Not connected. Connect the widget in Notion first.'); return; }
+  window.onSpotifyWebPlaybackSDKReady = () => {
+    const p = new Spotify.Player({ name: PLAYER_NAME, getOAuthToken: cb => { token().then(cb).catch(() => stat('Login expired. Reconnect the widget.')); }, volume: 0.6 });
+    p.addListener('ready', ({ device_id }) => {
+      stat('Ready. Playing through this window.');
+      try { window.opener && window.opener.postMessage({ spr_dev: device_id }, location.origin); } catch(e){}
+    });
+    p.addListener('not_ready', () => stat('Reconnecting...'));
+    p.addListener('autoplay_failed', () => { $('pstart').hidden = false; stat('Chrome blocked the sound until you click.'); });
+    p.addListener('player_state_changed', s => {
+      const t = s && s.track_window && s.track_window.current_track;
+      $('pnow').textContent = t ? t.name + ' - ' + t.artists.map(a => a.name).join(', ') : '';
+    });
+    for (const ev of ['initialization_error', 'authentication_error', 'account_error', 'playback_error'])
+      p.addListener(ev, ({ message }) => stat(message));
+    $('pstart').onclick = () => { p.activateElement(); p.resume(); $('pstart').hidden = true; stat('Ready. Playing through this window.'); };
+    p.connect();
+  };
+  const s = document.createElement('script'); s.src = 'https://sdk.scdn.co/spotify-player.js'; document.body.appendChild(s);
+}
+
+/* ---------- widget mode ---------- */
+let state = null, devCache = [], playlists = [], lastPoll = 0, polling = null, busy = false, ticking = false;
+let listP = null, listTracks = [], playerWin = null, devWaiter = null;
+
+function showGate(note){
+  $('app').hidden = true; const g = $('gate'); g.hidden = false;
+  g.innerHTML = '<div><h1>Spotify remote</h1><p>' + esc(note || 'Control your Spotify from Notion, with full songs on Premium.') + '</p>' +
+    '<button class="btn" id="go">Connect Spotify</button>' +
+    '<div class="paste"><input id="pk" placeholder="or paste key" aria-label="Paste key"><button class="ghost" id="pg">Use</button></div></div>';
+  $('go').onclick = login;
+  $('pg').onclick = () => { const v = $('pk').value.trim(); if (!v) return; store.set('spr_rt', v); store.del('spr_at'); store.del('spr_exp'); start(); };
+}
+
+async function login(){
+  await grabSAA();
+  const verifier = rand(48);
+  const challenge = b64u(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  const url = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
+    response_type:'code', client_id:CLIENT_ID, scope:SCOPES, redirect_uri:REDIRECT, show_dialog:'true',
+    code_challenge_method:'S256', code_challenge:challenge, state: rand(8) + '.' + verifier });
+  store.del('spr_scope');
+  const w = window.open(url, 'spr_login', 'width=480,height=720');
+  if (!w) location.href = url;
+  let tries = 0;
+  const t = setInterval(() => { if ((store.get('spr_rt') && hasScopes()) || ++tries > 180) { clearInterval(t); if (store.get('spr_rt')) start(); } }, 1000);
+}
+
+function listen(){
+  window.addEventListener('message', e => {
+    if (e.origin !== location.origin || !e.data) return;
+    const d = e.data;
+    if (d.spr && d.rt) { store.set('spr_rt', d.rt); if (d.scope) store.set('spr_scope', d.scope); store.del('spr_at'); start(); }
+    if (d.spr_hello && e.source) { try { e.source.postMessage({ spr_init: { rt: store.get('spr_rt') } }, location.origin); } catch(err){} }
+    if (d.spr_dev && devWaiter) devWaiter(d.spr_dev);
+  });
+}
+
+function say(t){ const m = $('msg'); m.textContent = t || ''; m.hidden = !t; if (t) setTimeout(() => { if (m.textContent === t) { m.textContent = ''; m.hidden = true; } }, 6000); }
 
 async function boot(){
   listen();
-  if (CLIENT_ID.startsWith('__')) { showGate('This widget has no Spotify app ID yet.'); $('go').disabled = true; return; }
-  if (!store.get('spr_rt')) { await grabSAAQuiet(); }
+  try { if (document.hasStorageAccess && await document.hasStorageAccess()) await grabSAA(); } catch(e){}
   store.get('spr_rt') ? start() : showGate();
 }
-async function grabSAAQuiet(){ try { if (document.hasStorageAccess && await document.hasStorageAccess()) await grabSAA(); } catch(e){} }
 
 async function start(){
   try { await token(); } catch(e) { showGate(); return; }
+  if (!hasScopes()) { showGate('One quick reconnect to unlock song picking and the built-in player.'); return; }
   $('gate').hidden = true; $('app').hidden = false;
   loadPlaylists(); poll();
   clearInterval(polling); polling = setInterval(() => { if (!document.hidden) poll(); }, 4000);
-  requestAnimationFrame(tick);
+  if (!ticking) { ticking = true; requestAnimationFrame(tick); }
 }
 
 async function loadPlaylists(){
   try {
     const j = await api('/me/playlists?limit=50');
-    playlists = (j.items || []).filter(Boolean);
-    renderPlaylists();
-  } catch(e) { if (e.message === 'nologin') showGate(); }
+    const mine = (j.items || []).filter(Boolean).map(p => ({ kind:'pl', name:p.name, id:p.id, uri:p.uri, img: p.images && p.images.length ? p.images[p.images.length - 1].url : '' }));
+    playlists = FIXED.concat(mine.filter(p => !FIXED.some(f => f.uri === p.uri)));
+  } catch(e) { if (e.message === 'nologin') return showGate(); playlists = FIXED.slice(); }
+  renderPlaylists();
+}
+function thumb(p){ return p.kind === 'liked' ? '<span class="liked">&#9829;</span>' : p.img ? '<img src="' + esc(p.img) + '" alt="">' : '<img alt="">'; }
+function isCurrent(p){
+  const ctx = state && state.context && state.context.uri;
+  if (!ctx) return false;
+  return p.kind === 'liked' ? /:collection$/.test(ctx) : ctx === p.uri;
 }
 function renderPlaylists(){
-  const ctx = state && state.context && state.context.uri;
-  $('pl').innerHTML = playlists.map((p, i) => {
-    const img = p.images && p.images.length ? p.images[p.images.length - 1].url : '';
-    return '<button class="chip' + (p.uri === ctx ? ' on' : '') + '" data-i="' + i + '" title="' + esc(p.name) + '">' +
-      (img ? '<img src="' + esc(img) + '" alt="">' : '<img alt="">') + '<span>' + esc(p.name) + '</span></button>';
-  }).join('');
+  $('pl').innerHTML = playlists.map((p, i) =>
+    '<button class="chip' + (isCurrent(p) ? ' on' : '') + '" data-i="' + i + '" title="' + esc(p.name) + '">' + thumb(p) + '<span>' + esc(p.name) + '</span></button>').join('');
 }
 
 async function poll(){
@@ -236,6 +323,7 @@ async function poll(){
   try {
     state = await api('/me/player?additional_types=episode');
     lastPoll = performance.now();
+    if (!state || !state.device) { const d = await api('/me/player/devices'); devCache = (d && d.devices) || []; } else devCache = [];
     render();
   } catch(e) { if (e.message === 'nologin') showGate(); }
 }
@@ -244,17 +332,18 @@ let lastArt = '';
 function render(){
   const it = state && state.item;
   $('title').textContent = it ? it.name : 'Nothing playing';
-  $('artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : (it.show && it.show.name) || '') : 'Pick a playlist below, or open Spotify on a device';
+  $('artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : (it.show && it.show.name) || '') : 'Pick a playlist below to start';
   const imgs = it && ((it.album && it.album.images) || it.images) || [];
   const src = imgs.length ? imgs[0].url : '';
   if (src !== lastArt) { lastArt = src; if (src) $('art').src = src; else $('art').removeAttribute('src'); }
   $('pico').innerHTML = state && state.is_playing ? '<path d="M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7z"/>' : '<path d="M3 1.7v12.6a.7.7 0 0 0 1.05.6l10.9-6.3a.7.7 0 0 0 0-1.2L4.05 1.1A.7.7 0 0 0 3 1.7"/>';
   $('play').setAttribute('aria-label', state && state.is_playing ? 'Pause' : 'Play');
   $('shuf').classList.toggle('on', !!(state && state.shuffle_state));
-  $('devn').textContent = state && state.device ? state.device.name : 'No active device';
+  $('devn').textContent = state && state.device ? state.device.name : (devCache.length ? devCache[0].name + ' (idle)' : 'Nothing open yet');
   if (state && state.device && state.device.volume_percent != null && document.activeElement !== $('vol')) $('vol').value = state.device.volume_percent;
   $('vol').disabled = !(state && state.device && state.device.supports_volume !== false);
   renderPlaylists();
+  if (listP) markCurrentTrack();
 }
 
 function tick(){
@@ -277,33 +366,78 @@ $('art').addEventListener('load', () => {
   } catch(e) {}
 });
 
-async function act(fn, after = 350){
+async function act(fn, after = 400){
   busy = true;
   try { await fn(); }
   catch(e) {
     if (e.message === 'nologin') { showGate(); return; }
-    if (e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) say('Open Spotify on your phone or PC first, then pick it from the device menu.');
-    else if (e.reason === 'PREMIUM_REQUIRED') say('Spotify says this needs Premium.');
-    else say(e.message);
+    if (e.reason === 'PREMIUM_REQUIRED') say('Spotify says this needs Premium.');
+    else if (e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) say(e.friendly || 'No Spotify device answered. Try again in a moment.');
+    else say(e.friendly || e.message);
   }
   finally { busy = false; setTimeout(poll, after); }
 }
 
-async function targetDevice(){
-  if (state && state.device) return null;
-  const j = await api('/me/player/devices'); devices = j.devices || [];
-  if (!devices.length) { const e = new Error('none'); e.reason = 'NO_ACTIVE_DEVICE'; throw e; }
-  return devices[0].id;
+/* Decide the device inside the click itself, so the player window is not blocked as a pop-up. */
+function pickDevice(){
+  if (state && state.device) return { id: null };
+  const usable = devCache.filter(d => !d.is_restricted);
+  const own = usable.find(d => d.name === PLAYER_NAME);
+  if (own) return { id: own.id };
+  if (usable.length) return { id: usable[0].id };
+  if (!playerWin || playerWin.closed) playerWin = window.open(REDIRECT + '?player=1', 'spr_player', 'width=380,height=260');
+  if (!playerWin) { const e = new Error('blocked'); e.friendly = 'Chrome blocked the player window. Allow pop-ups for notion.com, then try again.'; throw e; }
+  return { wait: true };
+}
+function waitForPlayer(){
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const finish = id => { if (done) return; done = true; devWaiter = null; clearInterval(t); resolve(id); };
+    devWaiter = finish;
+    let n = 0;
+    const t = setInterval(async () => {
+      if (++n > 40) { clearInterval(t); devWaiter = null; if (!done) { const e = new Error('timeout'); e.friendly = 'The player window did not start. Check it is open, then try again.'; reject(e); } return; }
+      try { const d = await api('/me/player/devices'); const f = ((d && d.devices) || []).find(x => x.name === PLAYER_NAME); if (f) finish(f.id); } catch(e) {}
+    }, 1000);
+  });
+}
+async function resolveDevice(pick){ return pick.wait ? await waitForPlayer() : pick.id; }
+const withDev = (path, id) => id ? path + (path.includes('?') ? '&' : '?') + 'device_id=' + encodeURIComponent(id) : path;
+
+async function startPlayback(id, body, shuffle){
+  await api(withDev('/me/player/shuffle?state=' + shuffle, id), { method:'PUT' }).catch(() => {});
+  try { await api(withDev('/me/player/play', id), { method:'PUT', body: JSON.stringify(body) }); }
+  catch(e) { if (!id) throw e; await sleep(1200); await api(withDev('/me/player/play', id), { method:'PUT', body: JSON.stringify(body) }); }
+  await api(withDev('/me/player/shuffle?state=' + shuffle, id), { method:'PUT' }).catch(() => {});
+}
+function bodyFor(p, index){
+  if (p.kind === 'liked') {
+    const uris = listTracks.slice(index || 0, (index || 0) + 100).map(t => t.uri);
+    if (!uris.length) { const e = new Error('empty'); e.friendly = 'Liked Songs is still loading.'; throw e; }
+    return { uris };
+  }
+  return index == null ? { context_uri: p.uri } : { context_uri: p.uri, offset: { position: index } };
+}
+function playFrom(p, index, shuffle){
+  let pick;
+  try { pick = pickDevice(); } catch(e) { say(e.friendly); return; }
+  act(async () => {
+    const body = bodyFor(p, shuffle ? null : index);
+    const id = await resolveDevice(pick);
+    await startPlayback(id, body, shuffle);
+  }, 900);
 }
 
-$('play').onclick = () => act(async () => {
-  if (state && state.is_playing) { state.is_playing = false; render(); await api('/me/player/pause', { method:'PUT' }); }
-  else { const id = await targetDevice(); await api('/me/player/play' + (id ? '?device_id=' + encodeURIComponent(id) : ''), { method:'PUT' }); }
-});
+$('play').onclick = () => {
+  if (state && state.is_playing) { state.is_playing = false; render(); act(() => api('/me/player/pause', { method:'PUT' })); return; }
+  if (state && state.device) { act(() => api('/me/player/play', { method:'PUT' })); return; }
+  let pick;
+  try { pick = pickDevice(); } catch(e) { say(e.friendly); return; }
+  act(async () => { const id = await resolveDevice(pick); await api('/me/player', { method:'PUT', body: JSON.stringify({ device_ids:[id], play:true }) }); }, 900);
+};
 $('next').onclick = () => act(() => api('/me/player/next', { method:'POST' }), 600);
 $('prev').onclick = () => act(() => api('/me/player/previous', { method:'POST' }), 600);
 $('shuf').onclick = () => act(() => api('/me/player/shuffle?state=' + !(state && state.shuffle_state), { method:'PUT' }));
-$('open').onclick = () => { const u = state && state.item && state.item.external_urls ? state.item.external_urls.spotify : 'https://open.spotify.com'; window.open(u, '_blank', 'noopener'); };
 $('bar').onclick = e => {
   if (!(state && state.item)) return;
   const r = e.currentTarget.getBoundingClientRect(); const ms = Math.round((e.clientX - r.left) / r.width * state.item.duration_ms);
@@ -312,28 +446,87 @@ $('bar').onclick = e => {
 };
 let vt = null;
 $('vol').oninput = e => { clearTimeout(vt); const v = e.target.value; vt = setTimeout(() => act(() => api('/me/player/volume?volume_percent=' + v, { method:'PUT' })), 250); };
-$('pl').onclick = e => {
-  const b = e.target.closest('.chip'); if (!b) return;
-  const p = playlists[+b.dataset.i]; if (!p) return;
-  act(async () => { const id = await targetDevice(); await api('/me/player/play' + (id ? '?device_id=' + encodeURIComponent(id) : ''), { method:'PUT', body: JSON.stringify({ context_uri: p.uri }) }); }, 700);
-};
+
+/* ---------- song list ---------- */
+$('pl').onclick = e => { const b = e.target.closest('.chip'); if (b) openList(playlists[+b.dataset.i]); };
+$('back').onclick = () => { $('list').hidden = true; listP = null; };
+$('lplay').onclick = () => listP && playFrom(listP, 0, false);
+$('lshuf').onclick = () => listP && playFrom(listP, null, true);
+$('tracks').onclick = e => { const b = e.target.closest('.tr'); if (b && listP) playFrom(listP, +b.dataset.i, false); };
+
+async function fetchAll(path, pick){
+  const out = [];
+  let next = path;
+  while (next && out.length < 1000) {
+    const j = await api(next);
+    for (const it of (j.items || [])) { const t = pick(it); if (t && t.uri && !t.is_local) out.push(t); }
+    next = j.next;
+    if (listP === null) break;
+  }
+  return out;
+}
+async function openList(p){
+  if (!p) return;
+  listP = p; listTracks = [];
+  $('lname').textContent = p.name;
+  $('tracks').innerHTML = '<div class="note">Loading songs...</div>';
+  $('list').hidden = false;
+  try {
+    let tr;
+    if (p.kind === 'liked') tr = await fetchAll('/me/tracks?limit=50', it => it.track);
+    else {
+      try { tr = await fetchAll('/playlists/' + p.id + '/tracks?limit=100', it => it.track || it.item); }
+      catch(e) { if (e.status === 403 || e.status === 404) tr = await fetchAll('/playlists/' + p.id + '/items?limit=100', it => it.item || it.track); else throw e; }
+    }
+    if (listP !== p) return;
+    listTracks = tr;
+    $('tracks').innerHTML = tr.length ? tr.map((t, i) => {
+      const im = t.album && t.album.images && t.album.images.length ? t.album.images[t.album.images.length - 1].url : '';
+      return '<button class="tr" data-i="' + i + '" data-u="' + esc(t.uri) + '"><span class="n">' + (i + 1) + '</span>' +
+        (im ? '<img src="' + esc(im) + '" alt="" loading="lazy">' : '<img alt="">') +
+        '<span><span class="t">' + esc(t.name) + '</span><span class="a">' + esc((t.artists || []).map(a => a.name).join(', ')) + '</span></span>' +
+        '<span class="d">' + fmt(t.duration_ms) + '</span></button>';
+    }).join('') : '<div class="note">This playlist is empty.</div>';
+    markCurrentTrack();
+  } catch(e) {
+    if (e.message === 'nologin') return showGate();
+    if (listP === p) $('tracks').innerHTML = '<div class="note">Spotify does not let apps read the songs in this playlist. Play and Shuffle still work.</div>';
+  }
+}
+function markCurrentTrack(){
+  const u = state && state.item && state.item.uri;
+  for (const b of $('tracks').querySelectorAll('.tr')) b.classList.toggle('on', !!u && b.dataset.u === u);
+}
+
+/* ---------- devices ---------- */
+let menuDevs = [];
 $('dev').onclick = async e => {
   e.stopPropagation();
   const m = $('menu'); if (!m.hidden) { m.hidden = true; return; }
-  try { const j = await api('/me/player/devices'); devices = j.devices || []; } catch(err) { devices = []; }
-  m.innerHTML = devices.length ? devices.map((d, i) => '<button data-i="' + i + '" class="' + (d.is_active ? 'on' : '') + '">' + esc(d.name) + ' <span style="color:var(--mute)">' + esc(d.type) + '</span></button>').join('')
-    : '<button disabled>No devices found. Open Spotify on your phone or PC.</button>';
+  try { const j = await api('/me/player/devices'); menuDevs = (j && j.devices) || []; } catch(err) { menuDevs = []; }
+  m.innerHTML = menuDevs.map((d, i) => '<button data-i="' + i + '" class="' + (d.is_active ? 'on' : '') + '">' + esc(d.name) + ' <span style="color:var(--mute)">' + esc(d.type) + '</span></button>').join('') +
+    (menuDevs.some(d => d.name === PLAYER_NAME) ? '' : '<button data-new="1">Open the built-in player</button>');
   m.hidden = false;
 };
 $('menu').onclick = e => {
-  const b = e.target.closest('button[data-i]'); if (!b) return;
-  const d = devices[+b.dataset.i]; $('menu').hidden = true;
+  const b = e.target.closest('button'); if (!b) return;
+  $('menu').hidden = true;
+  if (b.dataset.new) {
+    playerWin = window.open(REDIRECT + '?player=1', 'spr_player', 'width=380,height=260');
+    if (!playerWin) { say('Chrome blocked the player window. Allow pop-ups for notion.com.'); return; }
+    act(async () => { const id = await waitForPlayer(); await api('/me/player', { method:'PUT', body: JSON.stringify({ device_ids:[id], play:true }) }).catch(() => {}); }, 900);
+    return;
+  }
+  const d = menuDevs[+b.dataset.i]; if (!d) return;
   act(() => api('/me/player', { method:'PUT', body: JSON.stringify({ device_ids:[d.id], play:true }) }), 900);
 };
 document.addEventListener('click', e => { if (!e.target.closest('#menu')) $('menu').hidden = true; });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('app').hidden) poll(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('menu').hidden = true; });
-if (!(q.get('code') || q.get('error'))) boot();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('menu').hidden = true; if (!$('list').hidden) $('back').click(); } });
+
+if (MODE === 'callback') runCallback();
+else if (MODE === 'player') runPlayer();
+else boot();
 }
 </script>
 </body>
