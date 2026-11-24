@@ -332,7 +332,7 @@ let lastArt = '';
 function render(){
   const it = state && state.item;
   $('title').textContent = it ? it.name : 'Nothing playing';
-  $('artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : (it.show && it.show.name) || '') : 'Pick a playlist below to start';
+  $('artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : (it.show && it.show.name) || '') : 'Pick a playlist below. Spotify opens by itself.';
   const imgs = it && ((it.album && it.album.images) || it.images) || [];
   const src = imgs.length ? imgs[0].url : '';
   if (src !== lastArt) { lastArt = src; if (src) $('art').src = src; else $('art').removeAttribute('src'); }
@@ -378,13 +378,29 @@ async function act(fn, after = 400){
   finally { busy = false; setTimeout(poll, after); }
 }
 
-/* Decide the device inside the click itself, so the player window is not blocked as a pop-up. */
-function pickDevice(){
+/* Decide the device inside the click itself, so the app launch or player window is not blocked. */
+let appFailed = false;
+function launchApp(p){
+  const a = document.createElement('a');
+  a.href = p && p.uri && p.uri.startsWith('spotify:') ? p.uri : 'spotify:';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function waitForApp(){
+  for (let n = 0; n < 20; n++) {
+    await sleep(1000);
+    try { const d = await api('/me/player/devices'); const f = ((d && d.devices) || []).find(x => x.name !== PLAYER_NAME && !x.is_restricted); if (f) return f.id; } catch(e) {}
+  }
+  appFailed = true;
+  const e = new Error('noapp'); e.friendly = 'The Spotify app did not open. Click again to play in the built-in player instead.'; throw e;
+}
+function pickDevice(p){
   if (state && state.device) return { id: null };
   const usable = devCache.filter(d => !d.is_restricted);
+  const app = usable.find(d => d.name !== PLAYER_NAME);
+  if (app) return { id: app.id };
   const own = usable.find(d => d.name === PLAYER_NAME);
   if (own) return { id: own.id };
-  if (usable.length) return { id: usable[0].id };
+  if (!appFailed) { launchApp(p); return { app: true }; }
   if (!playerWin || playerWin.closed) playerWin = window.open(REDIRECT + '?player=1', 'spr_player', 'width=380,height=260');
   if (!playerWin) { const e = new Error('blocked'); e.friendly = 'Chrome blocked the player window. Allow pop-ups for notion.com, then try again.'; throw e; }
   return { wait: true };
@@ -401,7 +417,7 @@ function waitForPlayer(){
     }, 1000);
   });
 }
-async function resolveDevice(pick){ return pick.wait ? await waitForPlayer() : pick.id; }
+async function resolveDevice(pick){ return pick.app ? await waitForApp() : pick.wait ? await waitForPlayer() : pick.id; }
 const withDev = (path, id) => id ? path + (path.includes('?') ? '&' : '?') + 'device_id=' + encodeURIComponent(id) : path;
 
 async function startPlayback(id, body, shuffle){
@@ -420,7 +436,7 @@ function bodyFor(p, index){
 }
 function playFrom(p, index, shuffle){
   let pick;
-  try { pick = pickDevice(); } catch(e) { say(e.friendly); return; }
+  try { pick = pickDevice(p); } catch(e) { say(e.friendly); return; }
   act(async () => {
     const body = bodyFor(p, shuffle ? null : index);
     const id = await resolveDevice(pick);
